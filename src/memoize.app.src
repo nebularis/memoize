@@ -1,0 +1,6 @@
+{application, memoize,
+ [
+  {description, "Simple function memoization using annotations"},
+  {vsn, "0.0.1"},
+  {applications, [kernel,stdlib]}
+ ]}.
