@@ -28,7 +28,8 @@ around_advice(_A, M, F, Inputs) ->
     case ets:lookup(M, {F, Inputs}) of
         [] ->
             Result = annotation:call_advised(M, F, Inputs),
-            true = ets:insert_new(M, {{F, Inputs}, Result});
+            true = ets:insert_new(M, {{F, Inputs}, Result}),
+            Result;
         [{_, Memoized}] ->
             Memoized
     end.

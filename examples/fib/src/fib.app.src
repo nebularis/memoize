@@ -1,0 +1,9 @@
+{application, fib,
+ [
+  {description, "Example memoize app"},
+  {vsn, "1"},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]}
+ ]}.
