@@ -18,14 +18,16 @@
 -export([init/1]).
 -export([around_advice/4]).
 
+-include_lib("annotations/include/types.hrl").
+
 init(Module) ->
     ets:new(Module, [ordered_set, public, named_table,
                      {write_concurrency,true},
                      {read_concurrency,true}, compressed]),
     ok.
 
-around_advice(_A, M, F, Inputs) ->
-    case ets:lookup(M, {F, Inputs}) of
+around_advice(#annotation{data=Keys}, M, F, Inputs) ->
+    case ets:lookup(M, keys(Keys, F, Inputs)) of
         [] ->
             Result = annotation:call_advised(M, F, Inputs),
             true = ets:insert_new(M, {{F, Inputs}, Result}),
@@ -33,3 +35,10 @@ around_advice(_A, M, F, Inputs) ->
         [{_, Memoized}] ->
             Memoized
     end.
+
+keys(Idx, F, Inputs) when is_integer(Idx) ->
+    {F, lists:nth(Idx, Inputs)};
+keys(Keys, F, Inputs) when is_list(Keys) ->
+    {F, [ lists:nth(Idx, Inputs) || Idx <- Keys ]};
+keys(_, F, Inputs) ->
+    {F, Inputs}.

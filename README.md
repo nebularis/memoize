@@ -68,3 +68,20 @@ Then we see it at work in the shell:
            (v)ersion (k)ill (D)b-tables (d)istribution
     a
     t4@malachi:fib $ 
+
+## Memoizing based on a subset of all inputs
+
+Whilst I'm not entirely convinced whether this behaviour should be described as 
+memoization, you *can* instruct the annotation to use a subset of the inputs when
+checking the results cache.
+
+The usual ets key used during cache lookups is `{FunctionName, FunctionInputs}`,
+but this can be tweaked by passing one of the following options:
+
+```erlang
+%% this one selects a set of arguments
+-memoize(IndexesOfInputsToCacheOn::list(integer())).
+
+%% this one caches on one specific argument
+-memoize(Idx::integer()).
+```
