@@ -28,7 +28,7 @@ init(Module) ->
 
 around_advice(#annotation{data=Keys}, M, F, Inputs) ->
     case ets:lookup(M, keys(Keys, F, Inputs)) of
-        [] ->
+        None when None == [] orelse None == false ->
             Result = annotation:call_advised(M, F, Inputs),
             true = ets:insert_new(M, {{F, Inputs}, Result}),
             Result;
