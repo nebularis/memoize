@@ -19,21 +19,27 @@
 
 -include_lib("annotations/include/types.hrl").
 
-around_advice(#annotation{data={Keys, T}}, M, F, Inputs) ->
-    case ets:info(T) of
-        undefined ->
-            ets:new(T, [ordered_set, public, named_table,
-                        {write_concurrency,true},
-                        {read_concurrency,true}, compressed]);
-        _ -> ok
-    end,
-    case ets:lookup(T, keys(Keys, F, Inputs)) of
+around_advice(#annotation{data=D}, M, F, Inputs) ->
+    Keys = proplists:get_value(keys, D),
+    Table = proplists:get_value(table, D),
+
+    check(Table),
+    case ets:lookup(Table, keys(Keys, F, Inputs)) of
         None when None == [] orelse None == false ->
             Result = annotation:call_advised(M, F, Inputs),
-            true = ets:insert_new(T, {{F, Inputs}, Result}),
+            true = ets:insert_new(Table, {{F, Inputs}, Result}),
             Result;
         [{_, Memoized}] ->
             Memoized
+    end.
+
+check(Table) ->
+    case ets:info(Table) of
+        undefined ->
+            ets:new(Table, [ordered_set, public, named_table,
+                            {write_concurrency,true},
+                            {read_concurrency,true}, compressed]);
+        _ -> ok
     end.
 
 keys(Idx, F, Inputs) when is_integer(Idx) ->
