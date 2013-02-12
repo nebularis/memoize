@@ -15,25 +15,31 @@
 %% under the License.
 -module(memoize).
 -annotation('function').
--export([init/1]).
 -export([around_advice/4]).
 
 -include_lib("annotations/include/types.hrl").
 
-init(Module) ->
-    ets:new(Module, [ordered_set, public, named_table,
-                     {write_concurrency,true},
-                     {read_concurrency,true}, compressed]),
-    ok.
+around_advice(#annotation{data=D}, M, F, Inputs) ->
+    Keys = proplists:get_value(keys, D),
+    Table = proplists:get_value(table, D),
 
-around_advice(#annotation{data=Keys}, M, F, Inputs) ->
-    case ets:lookup(M, keys(Keys, F, Inputs)) of
+    check(Table),
+    case ets:lookup(Table, keys(Keys, F, Inputs)) of
         None when None == [] orelse None == false ->
             Result = annotation:call_advised(M, F, Inputs),
-            true = ets:insert_new(M, {{F, Inputs}, Result}),
+            true = ets:insert_new(Table, {{F, Inputs}, Result}),
             Result;
         [{_, Memoized}] ->
             Memoized
+    end.
+
+check(Table) ->
+    case ets:info(Table) of
+        undefined ->
+            ets:new(Table, [ordered_set, public, named_table,
+                            {write_concurrency,true},
+                            {read_concurrency,true}, compressed]);
+        _ -> ok
     end.
 
 keys(Idx, F, Inputs) when is_integer(Idx) ->
